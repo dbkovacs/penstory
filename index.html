@@ -339,7 +339,7 @@
                 beuData.push(beu);
             });
 
-            // Update Bar Chart
+            // Update Bar Chart dkedit
             beuBarChart.data.datasets[0].data = beuData.map(val => val === Infinity ? 0 : Math.ceil(val));
             beuBarChart.update();
         };
