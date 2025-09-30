@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Leverage Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'dark-bg': '#121212',
+                        'card-dark': '#1E1E1E',
+                        'primary-accent': '#00BFFF',
+                        'positive-green': '#28a745',
+                        'negative-red': '#dc3545',
+                        'warning-yellow': '#ffc107',
+                        'text-light': '#F5F5F5',
+                        'text-muted': '#A0A0A0',
+                        'border-gray': '#333333',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #F5F5F5;
+        }
+
+        .metric-card {
+            @apply p-8 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-[1.02] border border-border-gray bg-card-dark; /* Added bg-card-dark here */
+        }
+
+        .metric-value {
+            @apply text-5xl font-extrabold mt-4 tracking-tight;
+        }
+
+        .change-pill {
+            @apply px-4 py-2 rounded-full font-bold text-sm;
+        }
+
+        .positive-change {
+            @apply bg-positive-green/20 text-positive-green;
+        }
+
+        .negative-change {
+            @apply bg-negative-red/20 text-negative-red;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #00BFFF;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid #1E1E1E;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #00BFFF;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid #1E1E1E;
+        }
+    </style>
+</head>
+<body class="bg-dark-bg font-sans antialiased p-4 md:p-10">
+
+    <div class="max-w-7xl mx-auto">
+        
+        <header class="text-center mb-12 bg-card-dark p-8 rounded-2xl shadow-xl border border-border-gray">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-primary-accent mb-3 tracking-tight">
+                <i class="fas fa-chart-line mr-3"></i> Financial Leverage Dashboard
+            </h1>
+            <p class="text-lg text-text-muted">Explore how small changes in pricing or cost create massive leverage in your business's break-even point.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+
+            <div class="lg:col-span-4 space-y-8">
+                
+                <div class="p-8 bg-card-dark rounded-2xl shadow-2xl border border-border-gray sticky top-10">
+                    <h2 class="text-2xl font-bold text-text-light mb-6 border-b border-border-gray pb-4">1. Define the Business (Base Case)</h2>
+                    
+                    <div class="space-y-8">
+                        
+                        <div>
+                            <label for="salePrice" class="block text-sm font-semibold text-text-muted mb-3">Pen Sale Price ($/Unit): <span id="salePriceValue" class="text-lg text-primary-accent font-bold">$2.00</span></label>
+                            <input type="range" id="salePrice" value="2.00" min="0.10" max="10.00" step="0.05" class="w-full h-2 bg-border-gray rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <div>
+                            <label for="variableCost" class="block text-sm font-semibold text-text-muted mb-3">Variable Cost ($/Unit): <span id="variableCostValue" class="text-lg text-warning-yellow font-bold">$1.00</span></label>
+                            <input type="range" id="variableCost" value="1.00" min="0.05" max="5.00" step="0.05" class="w-full h-2 bg-border-gray rounded-lg appearance-none cursor-pointer">
+                            <p class="mt-2 text-xs text-text-muted">The cost that changes with each unit sold.</p>
+                        </div>
+
+                        <div>
+                            <label for="fixedCosts" class="block text-sm font-semibold text-text-muted mb-3">Total Monthly Fixed Costs ($): <span id="fixedCostsValue" class="text-lg text-negative-red font-bold">$1,000</span></label>
+                            <input type="range" id="fixedCosts" value="1000" min="100" max="10000" step="50" class="w-full h-2 bg-border-gray rounded-lg appearance-none cursor-pointer">
+                            <p class="mt-2 text-xs text-text-muted">Costs that remain constant (e.g., rent, salaries).</p>
+                        </div>
+
+                        <div class="pt-6 border-t border-dashed border-border-gray mt-6">
+                            <label for="changePercentInput" class="block text-sm font-semibold text-text-light mb-3">Scenario Change Percentage (%): <span id="changePercentValue" class="text-lg text-positive-green font-bold">15%</span></label>
+                            <input type="range" id="changePercentInput" value="15" min="1" max="100" step="1" class="w-full h-2 bg-border-gray rounded-lg appearance-none cursor-pointer">
+                            <p class="mt-2 text-xs text-text-muted">This percentage is used for all "What-If" scenarios.</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-10">
+                
+                <div>
+                    <h2 class="text-2xl font-bold text-text-light mb-4 border-b border-border-gray pb-4">2. Base Case Metrics</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                        <div class="metric-card border-primary-accent">
+                            <p class="text-base font-semibold text-text-muted">CM per Unit</p>
+                            <p class="metric-value text-primary-accent" id="cmPerUnit">$1.00</p>
+                            <p class="text-sm mt-2 text-text-muted">Revenue remaining after variable costs.</p>
+                        </div>
+                        
+                        <div class="metric-card border-positive-green">
+                            <p class="text-base font-semibold text-text-muted">CM Ratio</p>
+                            <p class="metric-value text-positive-green" id="cmRatio">50.00%</p>
+                            <p class="text-sm mt-2 text-text-muted">CM generated per dollar of revenue.</p>
+                        </div>
+                        
+                        <div class="metric-card border-warning-yellow">
+                            <p class="text-base font-semibold text-text-muted">Break-Even Units</p>
+                            <p class="metric-value text-warning-yellow" id="breakEvenUnits">1,000</p>
+                            <p class="text-sm mt-2 text-text-muted">Pens required to cover fixed costs.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold text-text-light mb-4 border-b border-border-gray pb-4">3. What-If Scenarios: Sales Volume Impact</h2>
+                    <p class="text-text-muted mb-6">These scenarios show the **required change in units sold** to maintain profitability after a change.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        
+                        <div class="metric-card border-negative-red">
+                            <h3 class="text-xl font-bold text-negative-red mb-3">Scenario: Price Down by <span id="s1-change-pct-label">15%</span></h3>
+                            <p class="text-sm font-semibold text-text-muted mb-2">New CM per Unit: <span id="s1-cm" class="font-bold text-text-light">$0.70</span></p>
+                            <p class="text-sm font-semibold text-text-muted mb-2">New Break-Even Units: <span id="s1-beu" class="font-bold text-text-light">1,429</span></p>
+                            <div class="mt-4 p-4 text-center">
+                                <span id="s1-percent" class="change-pill negative-change">42.86% Increase</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card border-positive-green">
+                            <h3 class="text-xl font-bold text-positive-green mb-3">Scenario: Cost Down by <span id="s2-change-pct-label">15%</span></h3>
+                            <p class="text-sm font-semibold text-text-muted mb-2">New CM per Unit: <span id="s2-cm" class="font-bold text-text-light">$1.15</span></p>
+                            <p class="text-sm font-semibold text-text-muted mb-2">New Break-Even Units: <span id="s2-beu" class="font-bold text-text-light">870</span></p>
+                            <div class="mt-4 p-4 text-center">
+                                <span id="s2-percent" class="change-pill positive-change">13.04% Decrease</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card border-primary-accent">
+                            <h3 class="text-xl font-bold text-primary-accent mb-3">Scenario: Price Up by <span id="s3-change-pct-label">15%</span></h3>
+                            <p class="text-sm font-semibold text-text-muted mb-2">New CM per Unit: <span id="s3-cm" class="font-bold text-text-light">$1.30</span></p>
+                            <p class="text-sm font-semibold text-text-muted mb-2">New Break-Even Units: <span id="s3-beu" class="font-bold text-text-light">769</span></p>
+                            <div class="mt-4 p-4 text-center">
+                                <span id="s3-percent" class="change-pill positive-change">23.08% Decrease</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card border-warning-yellow">
+                            <h3 class="text-xl font-bold text-warning-yellow mb-3">Scenario: Cost Up by <span id="s4-change-pct-label">15%</span></h3>
+                            <p class="text-sm font-semibold text-text-muted mb-2">New CM per Unit: <span id="s4-cm" class="font-bold text-text-light">$0.85</span></p>
+                            <p class="text-sm font-semibold text-text-muted mb-2">New Break-Even Units: <span id="s4-beu" class="font-bold text-text-light">1,177</span></p>
+                            <div class="mt-4 p-4 text-center">
+                                <span id="s4-percent" class="change-pill negative-change">17.65% Increase</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="p-8 bg-card-dark rounded-2xl shadow-xl border border-border-gray">
+                    <h2 class="text-2xl font-bold text-text-light mb-4 border-b border-border-gray pb-4">Break-Even Unit Comparison</h2>
+                    <p class="text-text-muted mb-6">Compare the required sales volume to break-even across all scenarios. Lower is better.</p>
+                    <canvas id="beuBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const salePriceInput = document.getElementById('salePrice');
+        const variableCostInput = document.getElementById('variableCost');
+        const fixedCostsInput = document.getElementById('fixedCosts');
+        const changePercentInput = document.getElementById('changePercentInput');
+
+        const salePriceValueDisplay = document.getElementById('salePriceValue');
+        const variableCostValueDisplay = document.getElementById('variableCostValue');
+        const fixedCostsValueDisplay = document.getElementById('fixedCostsValue');
+        const changePercentValueDisplay = document.getElementById('changePercentValue');
+
+        const cmPerUnitDisplay = document.getElementById('cmPerUnit');
+        const cmRatioDisplay = document.getElementById('cmRatio'); // Added CM Ratio display
+        const breakEvenUnitsDisplay = document.getElementById('breakEvenUnits');
+        const s1_cm = document.getElementById('s1-cm');
+        const s1_beu = document.getElementById('s1-beu');
+        const s1_percent = document.getElementById('s1-percent');
+        const s2_cm = document.getElementById('s2-cm');
+        const s2_beu = document.getElementById('s2-beu');
+        const s2_percent = document.getElementById('s2-percent');
+        const s3_cm = document.getElementById('s3-cm');
+        const s3_beu = document.getElementById('s3-beu');
+        const s3_percent = document.getElementById('s3-percent');
+        const s4_cm = document.getElementById('s4-cm');
+        const s4_beu = document.getElementById('s4-beu');
+        const s4_percent = document.getElementById('s4-percent');
+
+        const formatCurrency = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+        const formatNumber = (num) => num === Infinity ? 'Impossible' : new Intl.NumberFormat('en-US').format(Math.ceil(num));
+
+        const calculateMetrics = (sp, vc, fc) => {
+            const cm = sp - vc;
+            const beu = cm > 0 ? fc / cm : Infinity;
+            return { cm, beu };
+        };
+
+        let beuBarChart; // Removed cmRatioChart
+
+        const initializeCharts = () => {
+            const ctx2 = document.getElementById('beuBarChart').getContext('2d');
+            beuBarChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Base Case', 'Price Down', 'Cost Down', 'Price Up', 'Cost Up'],
+                    datasets: [{
+                        label: 'Break-Even Units',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: ['#ffc107', '#dc3545', '#28a745', '#00BFFF', '#ffc107'],
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Break-Even Units Comparison',
+                            color: '#F5F5F5'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#333333' },
+                            ticks: { color: '#A0A0A0' }
+                        },
+                        y: {
+                            grid: { color: '#333333' },
+                            ticks: { color: '#A0A0A0' }
+                        }
+                    }
+                }
+            });
+        };
+
+        const updateDashboard = () => {
+            const SP = parseFloat(salePriceInput.value);
+            const VC = parseFloat(variableCostInput.value);
+            const FC = parseFloat(fixedCostsInput.value);
+            const changePct = parseFloat(changePercentInput.value) / 100;
+
+            salePriceValueDisplay.textContent = formatCurrency(SP);
+            variableCostValueDisplay.textContent = formatCurrency(VC);
+            fixedCostsValueDisplay.textContent = formatNumber(FC);
+            changePercentValueDisplay.textContent = `${(changePct * 100).toFixed(0)}%`;
+
+            const { cm: baseCM, beu: baseBEU } = calculateMetrics(SP, VC, FC);
+            cmPerUnitDisplay.textContent = formatCurrency(baseCM);
+            cmRatioDisplay.textContent = baseCM > 0 && SP > 0 ? `${(baseCM / SP * 100).toFixed(2)}%` : 'N/A'; // Update CM Ratio
+            breakEvenUnitsDisplay.textContent = formatNumber(baseBEU);
+
+            // Scenario calculations
+            const scenarios = [
+                { sp: SP * (1 - changePct), vc: VC, cmDisplay: s1_cm, beuDisplay: s1_beu, percentDisplay: s1_percent },
+                { sp: SP, vc: VC * (1 - changePct), cmDisplay: s2_cm, beuDisplay: s2_beu, percentDisplay: s2_percent },
+                { sp: SP * (1 + changePct), vc: VC, cmDisplay: s3_cm, beuDisplay: s3_beu, percentDisplay: s3_percent },
+                { sp: SP, vc: VC * (1 + changePct), cmDisplay: s4_cm, beuDisplay: s4_beu, percentDisplay: s4_percent }
+            ];
+
+            const beuData = [baseBEU];
+
+            scenarios.forEach((s, index) => {
+                const { cm, beu } = calculateMetrics(s.sp, s.vc, FC);
+                s.cmDisplay.textContent = formatCurrency(cm);
+                s.beuDisplay.textContent = formatNumber(beu);
+
+                const change = baseBEU > 0 && beu !== Infinity ? (beu / baseBEU) - 1 : Infinity;
+                if (change === Infinity || isNaN(change)) {
+                    s.percentDisplay.textContent = 'N/A';
+                    s.percentDisplay.className = 'change-pill';
+                } else {
+                    const percentage = (change * 100).toFixed(2) + '%';
+                    const type = change > 0 ? 'Increase' : 'Decrease';
+                    const className = change > 0 ? 'negative-change' : 'positive-change';
+                    s.percentDisplay.textContent = `${percentage} ${type}`;
+                    s.percentDisplay.className = `change-pill ${className}`;
+                }
+                beuData.push(beu);
+            });
+
+            // Update Bar Chart
+            beuBarChart.data.datasets[0].data = beuData.map(val => val === Infinity ? 0 : Math.ceil(val));
+            beuBarChart.update();
+        };
+
+        const inputs = [salePriceInput, variableCostInput, fixedCostsInput, changePercentInput];
+        inputs.forEach(input => input.addEventListener('input', updateDashboard));
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeCharts();
+            updateDashboard();
+        });
+    </script>
+</body>
+</html>
