@@ -230,6 +230,13 @@
         const s4_cm = document.getElementById('s4-cm');
         const s4_beu = document.getElementById('s4-beu');
         const s4_percent = document.getElementById('s4-percent');
+        
+        // NEW: References for the scenario percentage labels in the headers
+        const s1_change_pct_label = document.getElementById('s1-change-pct-label');
+        const s2_change_pct_label = document.getElementById('s2-change-pct-label');
+        const s3_change_pct_label = document.getElementById('s3-change-pct-label');
+        const s4_change_pct_label = document.getElementById('s4-change-pct-label');
+
 
         const formatCurrency = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
         const formatNumber = (num) => num === Infinity ? 'Impossible' : new Intl.NumberFormat('en-US').format(Math.ceil(num));
@@ -284,11 +291,19 @@
             const VC = parseFloat(variableCostInput.value);
             const FC = parseFloat(fixedCostsInput.value);
             const changePct = parseFloat(changePercentInput.value) / 100;
+            const changePctText = `${(changePct * 100).toFixed(0)}%`; // Formatted text for display
 
             salePriceValueDisplay.textContent = formatCurrency(SP);
             variableCostValueDisplay.textContent = formatCurrency(VC);
             fixedCostsValueDisplay.textContent = formatNumber(FC);
-            changePercentValueDisplay.textContent = `${(changePct * 100).toFixed(0)}%`;
+            changePercentValueDisplay.textContent = changePctText;
+
+            // UPDATE SCENARIO HEADERS
+            s1_change_pct_label.textContent = changePctText;
+            s2_change_pct_label.textContent = changePctText;
+            s3_change_pct_label.textContent = changePctText;
+            s4_change_pct_label.textContent = changePctText;
+
 
             const { cm: baseCM, beu: baseBEU } = calculateMetrics(SP, VC, FC);
             cmPerUnitDisplay.textContent = formatCurrency(baseCM);
